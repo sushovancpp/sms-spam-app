@@ -1,7 +1,7 @@
 import streamlit as st
 import tensorflow as tf
 
-# ---------------- Page Config ----------------
+# ================== PAGE CONFIG ==================
 st.set_page_config(
     page_title="SMS Spam Detection",
     page_icon="📩",
@@ -9,115 +9,142 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---------------- Custom CSS ----------------
-st.markdown("""
-<style>
+# ================== THEME TOGGLE ==================
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
 
-/* Full page background */
-.stApp {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-}
+def toggle_theme():
+    st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
 
-/* Main card */
-.main-card {
-    background: white;
-    border-radius: 16px;
-    padding: 40px;
-    max-width: 900px;
-    margin: 40px auto;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-}
+# ================== CSS (GLASSMORPHISM) ==================
+def glass_css(theme):
+    if theme == "dark":
+        bg = "linear-gradient(135deg,#667eea,#764ba2)"
+        card = "rgba(255,255,255,0.15)"
+        text = "white"
+        subtext = "#e0e0e0"
+    else:
+        bg = "linear-gradient(135deg,#e0e7ff,#fdf2f8)"
+        card = "rgba(255,255,255,0.6)"
+        text = "#111"
+        subtext = "#444"
 
-/* Title */
-.title {
-    text-align: center;
-    font-size: 2.6rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
+    return f"""
+    <style>
+    .stApp {{
+        background: {bg};
+    }}
 
-/* Subtitle */
-.subtitle {
-    text-align: center;
-    color: #666;
-    margin-bottom: 30px;
-}
+    .glass {{
+        backdrop-filter: blur(14px);
+        background: {card};
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 900px;
+        margin: 30px auto;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        color: {text};
+    }}
 
-/* Result cards */
-.result {
-    padding: 25px;
-    border-radius: 12px;
-    text-align: center;
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-top: 20px;
-}
+    h1 {{
+        text-align: center;
+        color: {text};
+        font-weight: 700;
+    }}
 
-.spam {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-    color: white;
-}
+    .subtitle {{
+        text-align: center;
+        color: {subtext};
+        margin-bottom: 25px;
+    }}
 
-.ham {
-    background: linear-gradient(135deg, #51cf66, #37b24d);
-    color: white;
-}
+    div.stButton > button {{
+        background: linear-gradient(135deg,#4facfe,#00f2fe);
+        color: white;
+        font-size: 1.1rem;
+        padding: 0.7rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }}
 
-/* Confidence bar */
-.bar {
-    margin-top: 15px;
-    height: 8px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 4px;
-    overflow: hidden;
-}
+    .result {{
+        margin: 20px auto;
+        padding: 25px;
+        border-radius: 16px;
+        text-align: center;
+        color: white;
+        max-width: 800px;
+    }}
 
-.fill {
-    height: 100%;
-    background: white;
-    transition: width 0.4s ease;
-}
+    .spam {{
+        background: linear-gradient(135deg,#ff6b6b,#ee5a6f);
+    }}
 
-/* Button fix */
-div.stButton > button {
-    font-size: 1.1rem;
-    padding: 0.6rem;
-    border-radius: 10px;
-}
+    .ham {{
+        background: linear-gradient(135deg,#51cf66,#37b24d);
+    }}
 
-/* Footer */
-.footer {
-    text-align: center;
-    color: #999;
-    margin-top: 30px;
-    font-size: 0.9rem;
-}
+    .bar {{
+        height: 10px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 10px;
+    }}
 
-</style>
-""", unsafe_allow_html=True)
+    .fill {{
+        height: 100%;
+        background: white;
+    }}
 
-# ---------------- App UI ----------------
-st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+    .footer {{
+        text-align: center;
+        margin-top: 30px;
+        color: {subtext};
+        font-size: 0.9rem;
+    }}
 
-st.markdown("<div class='title'>📩 SMS Spam Detection</div>", unsafe_allow_html=True)
+    @media (max-width: 768px) {{
+        .glass {{
+            padding: 20px;
+            margin: 15px;
+        }}
+    }}
+    </style>
+    """
+
+st.markdown(glass_css(st.session_state.theme), unsafe_allow_html=True)
+
+# ================== THEME TOGGLE BUTTON ==================
+col1, col2, col3 = st.columns([1,1,1])
+with col3:
+    st.button(
+        "🌙 Dark / ☀️ Light",
+        on_click=toggle_theme,
+        use_container_width=True
+    )
+
+# ================== MAIN CARD ==================
+st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+st.markdown("<h1>📩 SMS Spam Detection</h1>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>AI-powered spam classification</div>", unsafe_allow_html=True)
 st.divider()
 
+# ================== LOAD MODEL ==================
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model("spam_dense.keras")
 
 model = load_model()
 
-# Input
-col1, col2 = st.columns([3, 1])
+# ================== INPUT SECTION ==================
+col1, col2 = st.columns([3,1])
 
 with col1:
     text = st.text_area(
         "📝 Enter SMS",
-        placeholder="Type or paste the message...",
+        placeholder="Type or paste the message here...",
         height=120
     )
 
@@ -128,13 +155,13 @@ with col2:
 
 st.divider()
 
-# Button centered
+# ================== BUTTON ==================
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    predict = st.button("🔍 Analyze Message", use_container_width=True)
+    analyze = st.button("🔍 Analyze Message", use_container_width=True)
 
-# Prediction
-if predict:
+# ================== PREDICTION ==================
+if analyze:
     if not text.strip():
         st.warning("Please enter a message.")
     else:
@@ -145,17 +172,21 @@ if predict:
         if pred >= 0.5:
             st.markdown(f"""
             <div class="result spam">
-                🚫 SPAM DETECTED
-                <div class="bar"><div class="fill" style="width:{confidence}%"></div></div>
-                Confidence: {confidence:.1f}%
+                <h2>🚫 SPAM DETECTED</h2>
+                <div class="bar">
+                    <div class="fill" style="width:{confidence}%"></div>
+                </div>
+                <p>Confidence: {confidence:.1f}%</p>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
             <div class="result ham">
-                ✅ LEGITIMATE MESSAGE
-                <div class="bar"><div class="fill" style="width:{confidence}%"></div></div>
-                Confidence: {confidence:.1f}%
+                <h2>✅ LEGITIMATE MESSAGE</h2>
+                <div class="bar">
+                    <div class="fill" style="width:{confidence}%"></div>
+                </div>
+                <p>Confidence: {confidence:.1f}%</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -166,4 +197,5 @@ if predict:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
+# ================== FOOTER ==================
 st.markdown("<div class='footer'>🤖 Powered by TensorFlow · Built with Streamlit</div>", unsafe_allow_html=True)
