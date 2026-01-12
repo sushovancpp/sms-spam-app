@@ -1,6 +1,5 @@
 import streamlit as st
 import tensorflow as tf
-from streamlit_extras.metric_cards import style_metric_cards
 
 st.set_page_config(
     page_title="SMS Spam Detection",
