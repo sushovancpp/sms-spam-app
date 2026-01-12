@@ -23,6 +23,3 @@ if st.button("Predict"):
             st.error("🚫 Spam Message")
         else:
             st.success("✅ Ham Message")
-
-# ================== FOOTER ==================
-st.markdown("<div class='footer'>🤖 Powered by TensorFlow · Built with Streamlit</div>", unsafe_allow_html=True)
